@@ -1,2 +1,315 @@
-# english-club-tazah
-English club
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Extracurricular English Club by Tazah MJ</title>
+  <style>
+    :root { --primary: #2b6cb0; --bg: #f4f6f9; --white: #ffffff; }
+    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 20px; background-color: var(--bg); color: #333; }
+    .container { max-width: 1000px; margin: 0 auto; background: var(--white); padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+    h1 { text-align: center; color: #1a365d; margin-bottom: 20px; }
+    
+    .tabs { display: flex; border-bottom: 2px solid #e2e8f0; margin-bottom: 20px; flex-wrap: wrap; }
+    .tab-btn { flex: 1; padding: 12px; border: none; background: #edf2f7; font-weight: bold; font-size: 15px; cursor: pointer; transition: 0.3s; min-width: 120px; }
+    .tab-btn.active { background: var(--primary); color: white; }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+
+    .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; margin-bottom: 20px; background: #f8fafc; padding: 15px; border-radius: 6px; }
+    .form-group { display: flex; flex-direction: column; gap: 5px; }
+    label { font-size: 13px; font-weight: bold; color: #4a5568; }
+    input, select, button { padding: 10px; border: 1px solid #cbd5e0; border-radius: 4px; font-size: 14px; }
+    
+    .btn-submit { background-color: #38a169; color: white; border: none; font-weight: bold; cursor: pointer; grid-column: 1 / -1; }
+    .btn-submit:hover { background-color: #2f855a; }
+    .btn-export { background-color: #dd6b20; color: white; border: none; font-weight: bold; cursor: pointer; padding: 10px 15px; margin-top: 15px; }
+    .btn-export:hover { background-color: #c05621; }
+    .btn-delete { background-color: #e53e3e; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; }
+
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 14px; }
+    th, td { border: 1px solid #e2e8f0; padding: 10px; text-align: center; }
+    th { background-color: #f7fafc; color: #2d3748; }
+    .empty-alert { color: #c53030; font-size: 13px; font-style: italic; }
+  </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+</head>
+<body>
+
+<div class="container">
+  <h1>Extracurricular English Club by Tazah MJ</h1>
+
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab(event, 'tab-siswa')">Data Siswa</button>
+    <button class="tab-btn" onclick="switchTab(event, 'tab-absen')">Kehadiran</button>
+    <button class="tab-btn" onclick="switchTab(event, 'tab-nilai')">Penilaian</button>
+    <button class="tab-btn" onclick="switchTab(event, 'tab-sikap')">Sikap</button>
+  </div>
+
+  <!-- TAB MASTER SISWA -->
+  <div id="tab-siswa" class="tab-content active">
+    <h3>Kelola Master Data Siswa</h3>
+    <form class="form-grid" onsubmit="saveMasterSiswa(event)">
+      <div class="form-group" style="grid-column: 1 / -1;">
+        <label>Nama Lengkap Siswa Baru</label>
+        <input type="text" id="siswa-nama" placeholder="Contoh: Andi Pratama" required>
+      </div>
+      <button type="submit" class="btn-submit">Tambah Siswa Ke Daftar</button>
+    </form>
+
+    <table id="tbl-siswa">
+      <thead><tr><th>No</th><th>Nama Siswa</th><th>Aksi</th></tr></thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+  <!-- TAB KEHADIRAN -->
+  <div id="tab-absen" class="tab-content">
+    <form class="form-grid" onsubmit="saveAbsen(event)">
+      <div class="form-group"><label>Tanggal Input</label><input type="date" id="abs-tgl" required></div>
+      <div class="form-group">
+        <label>Pilih Nama Siswa</label>
+        <select id="abs-nama" class="dropdown-siswa" required></select>
+      </div>
+      <div class="form-group">
+        <label>Status Kehadiran</label>
+        <select id="abs-status">
+          <option value="Hadir">Hadir</option>
+          <option value="Izin">Izin</option>
+          <option value="Sakit">Sakit</option>
+          <option value="Alfa">Alfa</option>
+        </select>
+      </div>
+      <button type="submit" class="btn-submit">Simpan Kehadiran</button>
+    </form>
+
+    <table id="tbl-absen">
+      <thead><tr><th>Tanggal</th><th>Nama Siswa</th><th>Status</th><th>Aksi</th></tr></thead>
+      <tbody></tbody>
+    </table>
+    <button class="btn-export" onclick="exportExcel('tbl-absen', 'Kehadiran_EnglishClub')">Download Excel Kehadiran</button>
+  </div>
+
+  <!-- TAB PENILAIAN -->
+  <div id="tab-nilai" class="tab-content">
+    <form class="form-grid" onsubmit="saveNilai(event)">
+      <div class="form-group"><label>Tanggal Evaluasi</label><input type="date" id="nil-tgl" required></div>
+      <div class="form-group">
+        <label>Pilih Nama Siswa</label>
+        <select id="nil-nama" class="dropdown-siswa" required></select>
+      </div>
+      <div class="form-group"><label>Speaking (0-100)</label><input type="number" id="nil-s" min="0" max="100" required></div>
+      <div class="form-group"><label>Writing (0-100)</label><input type="number" id="nil-w" min="0" max="100" required></div>
+      <div class="form-group"><label>Listening (0-100)</label><input type="number" id="nil-l" min="0" max="100" required></div>
+      <button type="submit" class="btn-submit">Simpan Penilaian</button>
+    </form>
+
+    <table id="tbl-nilai">
+      <thead><tr><th>Tanggal</th><th>Nama Siswa</th><th>Speaking</th><th>Writing</th><th>Listening</th><th>Nilai Akhir</th><th>Aksi</th></tr></thead>
+      <tbody></tbody>
+    </table>
+    <button class="btn-export" onclick="exportExcel('tbl-nilai', 'Penilaian_EnglishClub')">Download Excel Penilaian</button>
+  </div>
+
+  <!-- TAB SIKAP -->
+  <div id="tab-sikap" class="tab-content">
+    <form class="form-grid" onsubmit="saveSikap(event)">
+      <div class="form-group"><label>Tanggal Penilaian</label><input type="date" id="sik-tgl" required></div>
+      <div class="form-group">
+        <label>Pilih Nama Siswa</label>
+        <select id="sik-nama" class="dropdown-siswa" required></select>
+      </div>
+      <div class="form-group">
+        <label>Predikat Sikap</label>
+        <select id="sik-predikat">
+          <option value="Sangat Baik (A)">Sangat Baik (A)</option>
+          <option value="Baik (B)">Baik (B)</option>
+          <option value="Cukup (C)">Cukup (C)</option>
+          <option value="Kurang (D)">Kurang (D)</option>
+        </select>
+      </div>
+      <div class="form-group"><label>Catatan Perilaku</label><input type="text" id="sik-catatan" placeholder="Catatan/Sikap"></div>
+      <button type="submit" class="btn-submit">Simpan Assessment Sikap</button>
+    </form>
+
+    <table id="tbl-sikap">
+      <thead><tr><th>Tanggal</th><th>Nama Siswa</th><th>Predikat</th><th>Catatan</th><th>Aksi</th></tr></thead>
+      <tbody></tbody>
+    </table>
+    <button class="btn-export" onclick="exportExcel('tbl-sikap', 'Sikap_EnglishClub')">Download Excel Sikap</button>
+  </div>
+</div>
+
+<script>
+  function switchTab(evt, tabId) {
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById(tabId).classList.add('active');
+    evt.currentTarget.classList.add('active');
+  }
+
+  // Set default tanggal hari ini
+  const today = new Date().toISOString().split('T')[0];
+  document.getElementById('abs-tgl').value = today;
+  document.getElementById('nil-tgl').value = today;
+  document.getElementById('sik-tgl').value = today;
+
+  window.onload = function() { loadAllData(); };
+
+  function getData(key) { return JSON.parse(localStorage.getItem(key) || '[]'); }
+  function setData(key, data) { localStorage.setItem(key, JSON.stringify(data)); }
+
+  // 1. MASTER SISWA LOGIC
+  function saveMasterSiswa(e) {
+    e.preventDefault();
+    const namaInput = document.getElementById('siswa-nama').value.trim();
+    if (!namaInput) return;
+
+    const list = getData('ec_master_siswa');
+    if (list.includes(namaInput)) {
+      alert('Nama siswa ini sudah ada di dalam daftar!');
+      return;
+    }
+
+    list.push(namaInput);
+    list.sort(); // Urutkan alfabetis
+    setData('ec_master_siswa', list);
+    document.getElementById('siswa-nama').value = '';
+    loadAllData();
+  }
+
+  function deleteMasterSiswa(index) {
+    if (confirm('Hapus siswa dari daftar master?')) {
+      const list = getData('ec_master_siswa');
+      list.splice(index, 1);
+      setData('ec_master_siswa', list);
+      loadAllData();
+    }
+  }
+
+  function updateDropdowns() {
+    const list = getData('ec_master_siswa');
+    const dropdowns = document.querySelectorAll('.dropdown-siswa');
+
+    dropdowns.forEach(select => {
+      select.innerHTML = '';
+      if (list.length === 0) {
+        select.innerHTML = '<option value="">-- Tambahkan siswa di tab Data Siswa dahulu --</option>';
+      } else {
+        select.innerHTML = '<option value="">-- Pilih Siswa --</option>';
+        list.forEach(nama => {
+          select.innerHTML += `<option value="${nama}">${nama}</option>`;
+        });
+      }
+    });
+  }
+
+  // 2. SAVE HANDLERS
+  function saveAbsen(e) {
+    e.preventDefault();
+    const nama = document.getElementById('abs-nama').value;
+    if (!nama) return alert('Silakan pilih nama siswa!');
+
+    const list = getData('ec_absen');
+    list.push({
+      tgl: document.getElementById('abs-tgl').value,
+      nama: nama,
+      status: document.getElementById('abs-status').value
+    });
+    setData('ec_absen', list);
+    document.getElementById('abs-nama').value = '';
+    loadAllData();
+  }
+
+  function saveNilai(e) {
+    e.preventDefault();
+    const nama = document.getElementById('nil-nama').value;
+    if (!nama) return alert('Silakan pilih nama siswa!');
+
+    const s = parseFloat(document.getElementById('nil-s').value);
+    const w = parseFloat(document.getElementById('nil-w').value);
+    const l = parseFloat(document.getElementById('nil-l').value);
+    const akhir = ((s + w + l) / 3).toFixed(2);
+
+    const list = getData('ec_nilai');
+    list.push({
+      tgl: document.getElementById('nil-tgl').value,
+      nama: nama,
+      s, w, l, akhir
+    });
+    setData('ec_nilai', list);
+    document.getElementById('nil-nama').value = '';
+    document.getElementById('nil-s').value = '';
+    document.getElementById('nil-w').value = '';
+    document.getElementById('nil-l').value = '';
+    loadAllData();
+  }
+
+  function saveSikap(e) {
+    e.preventDefault();
+    const nama = document.getElementById('sik-nama').value;
+    if (!nama) return alert('Silakan pilih nama siswa!');
+
+    const list = getData('ec_sikap');
+    list.push({
+      tgl: document.getElementById('sik-tgl').value,
+      nama: nama,
+      predikat: document.getElementById('sik-predikat').value,
+      catatan: document.getElementById('sik-catatan').value || '-'
+    });
+    setData('ec_sikap', list);
+    document.getElementById('sik-nama').value = '';
+    document.getElementById('sik-catatan').value = '';
+    loadAllData();
+  }
+
+  // 3. LOAD & RENDER TABLES
+  function loadAllData() {
+    renderMasterTable();
+    updateDropdowns();
+    renderTable('ec_absen', 'tbl-absen', ['tgl', 'nama', 'status']);
+    renderTable('ec_nilai', 'tbl-nilai', ['tgl', 'nama', 's', 'w', 'l', 'akhir']);
+    renderTable('ec_sikap', 'tbl-sikap', ['tgl', 'nama', 'predikat', 'catatan']);
+  }
+
+  function renderMasterTable() {
+    const data = getData('ec_master_siswa');
+    const tbody = document.getElementById('tbl-siswa').querySelector('tbody');
+    tbody.innerHTML = '';
+    data.forEach((nama, index) => {
+      tbody.innerHTML += `<tr>
+        <td>${index + 1}</td>
+        <td><strong>${nama}</strong></td>
+        <td><button class="btn-delete" onclick="deleteMasterSiswa(${index})">Hapus</button></td>
+      </tr>`;
+    });
+  }
+
+  function renderTable(storageKey, tableId, keys) {
+    const data = getData(storageKey);
+    const tbody = document.getElementById(tableId).querySelector('tbody');
+    tbody.innerHTML = '';
+    data.forEach((item, index) => {
+      let rowHtml = '<tr>';
+      keys.forEach(k => { rowHtml += `<td>${item[k]}</td>`; });
+      rowHtml += `<td><button class="btn-delete" onclick="deleteRow('${storageKey}', ${index})">Hapus</button></td></tr>`;
+      tbody.innerHTML += rowHtml;
+    });
+  }
+
+  function deleteRow(storageKey, index) {
+    const list = getData(storageKey);
+    list.splice(index, 1);
+    setData(storageKey, list);
+    loadAllData();
+  }
+
+  // 4. EXPORT EXCEL
+  function exportExcel(tableId, fileName) {
+    const table = document.getElementById(tableId);
+    const wb = XLSX.utils.table_to_book(table, { sheet: "Data" });
+    XLSX.writeFile(wb, `${fileName}.xlsx`);
+  }
+</script>
+</body>
+</html>
